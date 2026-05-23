@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGA Live Slip Tracker</title>
+<style>
+body { font-family: Arial, sans-serif; background:#0f172a; color:white; margin:0; padding:20px; }
+h1 { color:#38bdf8; }
+.card { background:#1e293b; padding:16px; border-radius:12px; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:10px; border-bottom:1px solid #334155; text-align:left; }
+th { color:#7dd3fc; }
+.hit { color:#4ade80; font-weight:bold; }
+.miss { color:#f87171; font-weight:bold; }
+</style>
+</head>
+<body>
+<h1>PGA Live Slip Tracker</h1>
+<div class="card">
+<h2>Live Betting Dashboard</h2>
+<table>
+<thead>
+<tr>
+<th>Player</th>
+<th>Position</th>
+<th>Total</th>
+<th>Round</th>
+<th>Hole</th>
+<th>Hit %</th>
+<th>Edge</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scottie Scheffler</td>
+<td>T2</td>
+<td>-8</td>
+<td>-3</td>
+<td>15</td>
+<td>78%</td>
+<td>+12%</td>
+<td class="hit">LIVE</td>
+</tr>
+<tr>
+<td>Rory McIlroy</td>
+<td>T8</td>
+<td>-5</td>
+<td>-1</td>
+<td>13</td>
+<td>54%</td>
+<td>+4%</td>
+<td class="hit">LIVE</td>
+</tr>
+<tr>
+<td>Xander Schauffele</td>
+<td>T21</td>
+<td>-2</td>
+<td>+1</td>
+<td>11</td>
+<td>31%</td>
+<td>-3%</td>
+<td class="miss">RISK</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="card">
+<h2>Model Notes</h2>
+<p>Live hit probability model factors current position, strokes gained trends, scoring average, live round momentum, and historical closing percentages.</p>
+</div>
+</body>
+</html>
