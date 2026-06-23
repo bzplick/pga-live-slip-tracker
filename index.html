@@ -1,1 +1,264 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Full Monty PGA Slip Tracker</title><style>:root{--bg:#07110f;--p:#10201c;--c:#172b26;--l:#285145;--t:#f4fff9;--m:#9fb2ab;--g:#12f7b0;--y:#facc15;--r:#fb7185}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}header{position:sticky;top:0;z-index:9;background:#081713;border-bottom:1px solid var(--l);padding:16px}h1{margin:0;font-size:26px}.sub{color:var(--m);font-size:13px;margin-top:4px}.wrap{max-width:1500px;margin:auto;padding:14px;display:grid;gap:14px}.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.box,.card{background:var(--p);border:1px solid var(--l);border-radius:16px;padding:12px}.kpi b{display:block;color:var(--g);font-size:22px}.kpi span,.muted,small{color:var(--m)}.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}button,a.btn{border:1px solid var(--l);background:#17372f;color:var(--t);border-radius:12px;padding:9px 12px;text-decoration:none;font-weight:800}button{cursor:pointer}.primary{background:var(--g);color:#032014}input{background:#07110f;color:var(--t);border:1px solid var(--l);border-radius:12px;padding:9px;min-width:360px}.grid{display:grid;grid-template-columns:430px 1fr;gap:14px}@media(max-width:980px){.grid,.kpis{grid-template-columns:1fr}input{min-width:100%}}.slip{background:var(--c);border:1px solid var(--l);border-radius:16px;padding:12px;margin:10px 0}.slip.dead{opacity:.7;border-color:#7f1d1d}.head{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--l);padding-bottom:8px}.head h3{margin:2px 0}.odds{text-align:right;font-size:18px;font-weight:900}.leg{display:grid;grid-template-columns:1fr auto;gap:8px;padding:7px 0;border-bottom:1px dashed #2d5a50}.leg:last-child{border-bottom:0}em{font-style:normal;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;border:1px solid var(--l);white-space:nowrap}.wait{background:#172554;color:#bfdbfe}.live{background:#422006;color:#fde68a}.hit{background:#064e3b;color:#a7f3d0}.miss{background:#4c0519;color:#fecdd3}.near{background:#713f12;color:#fef3c7}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--l);padding:8px;text-align:left;vertical-align:middle}th{background:#10201c;color:#a7f3d0;position:sticky;top:78px;z-index:3}td small{display:block;font-size:11px}.good{color:var(--g)}.bad{color:var(--r)}.warn{color:var(--y)}a{color:#86efac}.bar{height:6px;width:70px;background:#0b1916;border-radius:99px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:var(--g)}.note{background:#0f1f1b;border:1px solid var(--l);border-radius:14px;padding:12px;color:#d1fae5}</style></head><body><header><h1>Full Monty PGA Slip Tracker</h1><div class="sub">Static slips render immediately. Live feed tries leaderboard.json first, then ESPN PGA scoreboard. Cut rule: today-only score over +5 = Missed Cut.</div></header><main class="wrap"><section class="kpis" id="kpis"></section><section class="box controls"><button class="primary" onclick="loadBoard()">Refresh live data</button><input id="jsonUrl" value="leaderboard.json"><a class="btn" target="_blank" href="https://www.pgatour.com/leaderboard">PGA</a><a class="btn" target="_blank" href="https://www.espn.com/golf/leaderboard">ESPN</a><a class="btn" target="_blank" href="https://www.cbssports.com/golf/leaderboard/">CBS</a><a class="btn" target="_blank" href="https://datagolf.com/live-model">DataGolf</a></section><div class="note" id="note"><b>Loading feed...</b></div><section class="grid"><aside class="card"><h2>Slip Cards</h2><div id="slips"></div></aside><section class="card"><h2>Player Tracker</h2><div style="overflow:auto"><table><thead><tr><th>Player</th><th>Books</th><th>Markets</th><th>Pos</th><th>Total</th><th>Today</th><th>Thru</th><th>Cut</th><th>Hit %</th><th>Edge</th><th>Data</th></tr></thead><tbody id="players"></tbody></table></div></section></section></main><script>const slips=[['Bet365','B365 Top 10 Trio',25000,1,251,[['Denny McCarthy',10],['Alex Noren',10],['Justin Rose',10]]],['Bet365','B365 Lotto Top 20 A',65000,1,651,[['Maverick McNealy',20],['Lucas Glover',20],['Michael Kim',20],['Andrew Novak',20],['Ryan Fox',20],['Sahith Theegala',20]]],['Bet365','B365 Lotto Top 20 B',70000,1,701,[['Alex Fitzpatrick',20],['Bud Cauley',20],['Sungjae Im',20],['Ryan Gerard',20],['Shane Lowry',20],['Akshay Bhatia',20]]],['Bet365','B365 Core Top 20',3300,1,34,[['Rory McIlroy',20],['Ludvig Aberg',20],['Xander Schauffele',20],['Jacob Bridgeman',20],['Brian Harman',20]]],['Bet365','B365 Top 20 Mix',2000,1,21,[['Cameron Young',20],['Matt Fitzpatrick',20],['Tommy Fleetwood',20],['Jordan Spieth',20],['Min Woo Lee',20]]],['DraftKings','DK 5 Pick Top 20',5500,1,56,[['Si Woo Kim',20],['Akshay Bhatia',20],['Justin Rose',20],['J.J. Spaun',20],['Justin Thomas',20]]],['DraftKings','DK 5 Pick Top 20 Lotto',15000,1,151,[['Gary Woodland',20],['Alex Fitzpatrick',20],['Chris Gotterup',20],['Sam Burns',20],['Shane Lowry',20]]],['DraftKings','DK Top 20 Triple',4000,1,41,[['Andrew Novak',20],['Sahith Theegala',20],['Sungjae Im',20]]],['DraftKings','DK Mixed 20/30',2978,1,30.78,[['Jacob Bridgeman',20],['Ryan Fox',30],['Hideki Matsuyama',30],['Jordan Spieth',30],['Sam Burns',30]]],['DraftKings','DK Top 10 Longshot',30000,1,301,[['Brian Harman',10],['Wyndham Clark',10],['Jason Day',10]]],['DraftKings','DK Top 10 Chalk',2600,1,27,[['Cameron Young',10],['Ben Griffin',10],['Patrick Cantlay',10]]]];const BASE={10:.18,20:.32,30:.46};const qs=s=>document.querySelector(s),qsa=s=>[...document.querySelectorAll(s)];function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}function parseScore(x){if(x==null||x==='')return null;let t=String(x).trim().toUpperCase().replace('−','-');if(['E','EVEN','-'].includes(t))return 0;let n=parseInt(t.replace('+',''),10);return isNaN(n)?null:n}function fmt(x){if(x==null||x==='')return '—';if(typeof x==='number')return x>0?'+'+x:String(x);return String(x)}function pct(x){return (x*100).toFixed(1)+'%'}function money(x){return '$'+Number(x).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}function prob(row,t){if(!row)return BASE[t]||.25;let rank=Number(row.position||row.pos||row.rank||999),today=parseScore(row.roundScore??row.today??row.todayScore??row.rnd??row.round),thru=Number(row.thru||0),total=parseScore(row.total??row.score??row.totalScore);if(today!=null&&today>5)return 0;let p=BASE[t]||.25;if(rank<999)p+=(t-rank)*.014;if(today!=null)p+=(-today)*.012;if(total!=null)p+=(-total)*.006;if(thru)p+=Math.min(thru,18)/18*.04;if(rank<=t)p+=.18;if(rank>t+18)p-=.12;return Math.max(.01,Math.min(.94,p))}function render(){let pay=slips.reduce((a,s)=>a+s[4],0),w=slips.reduce((a,s)=>a+s[3],0),map={};slips.forEach(s=>s[5].forEach(l=>{let p=l[0],t=l[1];map[p]=map[p]||{books:new Set,markets:[]};map[p].books.add(s[0]);map[p].markets.push('Top '+t)}));qs('#kpis').innerHTML=`<div class='box kpi'><b>${money(w)}</b><span>Total wager</span></div><div class='box kpi'><b>${money(pay)}</b><span>Max return</span></div><div class='box kpi'><b>${slips.length}</b><span>Slips</span></div><div class='box kpi'><b>${Object.keys(map).length}</b><span>Players</span></div><div class='box kpi'><b id='alive'>${slips.length}</b><span>Alive slips</span></div><div class='box kpi'><b id='feed'>Static</b><span>Feed</span></div>`;qs('#slips').innerHTML=slips.map((s,i)=>`<article class='slip' data-slip='${i}'><div class='head'><div><strong>${s[0]}</strong><h3>${s[1]}</h3><small>${s[5].length} picks • wager ${money(s[3])} • pays ${money(s[4])}</small></div><div class='odds'>+${s[2]}<br><em class='live slipstat'>OPEN</em></div></div>${s[5].map(l=>`<div class='leg' data-leg='${norm(l[0])}'><div><b>${l[0]}</b><small>Top ${l[1]} target</small></div><em class='wait'>WAIT</em></div>`).join('')}</article>`).join('');qs('#players').innerHTML=Object.entries(map).sort().map(([p,d])=>`<tr data-player='${p}'><td><b>${p}</b></td><td>${[...d.books].join(', ')}</td><td>${[...new Set(d.markets)].join(', ')}</td><td class='pos'>—</td><td class='total'>—</td><td class='today'>—</td><td class='thru'>—</td><td><em class='wait cut'>WAIT</em></td><td class='hitp'>—</td><td class='edge'>Pending</td><td class='source'>—</td></tr>`).join('')}function readBoard(data){let rows=Array.isArray(data)?data:(data.players||data.leaderboard||data.rows||[]);if(!rows.length&&data.events){let ev=data.events.find(e=>/memorial/i.test(e.name||e.shortName||''))||data.events[0],comp=ev?.competitions?.[0];rows=(comp?.competitors||[]).map(c=>{let ls=c.linescores||[],r=[...ls].reverse().find(x=>x&&x.displayValue!==undefined)||{},thru=Array.isArray(r.linescores)?r.linescores.length:(r.thru||r.period||0),status=String(c.status?.type?.name||c.status?.displayName||'').toLowerCase();return {player:c.athlete?.displayName||c.displayName||'',position:c.curatedRank?.current||c.order||c.rank||'',total:c.score||c.displayValue||'',roundScore:r.displayValue||r.value||'',today:r.displayValue||r.value||'',thru:thru>=18?'F':(thru||''),status,source:'ESPN'}})}let out={};rows.forEach(r=>{let name=r.player||r.name||r.golfer||r.athlete?.displayName;if(name)out[norm(name)]=r});return out}async function fetchFirst(){let custom=qs('#jsonUrl').value.trim(),urls=[custom,'https://site.web.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard','https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard'].filter(Boolean),errs=[];for(let u of urls){try{let res=await fetch(u+(u.includes('?')?'&':'?')+'v='+Date.now(),{cache:'no-store'});if(!res.ok)throw Error(res.status);return{url:u,data:await res.json()}}catch(e){errs.push(u+': '+e.message)}}throw Error(errs.join(' | '))}async function loadBoard(){let note=qs('#note');try{let got=await fetchFirst(),board=readBoard(got.data),matched=0;qsa('tr[data-player]').forEach(tr=>{let p=tr.dataset.player,row=board[norm(p)],markets=tr.children[2].textContent.match(/Top \d+/g)||[],best=0;if(row){matched++;let pos=row.position??row.pos??row.rank,total=row.total??row.score??row.totalScore,today=parseScore(row.roundScore??row.today??row.todayScore??row.rnd??row.round),thru=row.thru??row.hole??'—';tr.querySelector('.pos').textContent=pos??'—';tr.querySelector('.total').textContent=fmt(total);tr.querySelector('.today').textContent=fmt(today);tr.querySelector('.thru').textContent=fmt(thru);tr.querySelector('.source').textContent=row.source||got.url.includes('espn')?'ESPN':'JSON';markets.forEach(m=>best=Math.max(best,prob(row,parseInt(m.replace('Top ','')))));let edge=best-(BASE[parseInt(markets[0]?.replace('Top ',''))]||.25),cut=tr.querySelector('.cut');if(today!=null&&today>5){cut.className='miss cut';cut.textContent='MISSED CUT';tr.querySelector('.edge').innerHTML='<span class=bad>Today '+fmt(today)+' > +5</span>';tr.querySelector('.hitp').textContent='0.0%'}else{cut.className=(today!=null&&today>=4?'near cut':'hit cut');cut.textContent=today!=null&&today>=4?'NEAR CUT':'LIVE';tr.querySelector('.hitp').innerHTML=pct(best)+`<div class='bar'><i style='width:${Math.max(2,best*100)}%'></i></div>`;tr.querySelector('.edge').innerHTML=(edge>=0?'<span class=good>+':'<span class=bad>')+pct(edge)+'</span>'}}});slips.forEach((s,i)=>{let dead=false,inside=0;s[5].forEach(l=>{let row=board[norm(l[0])],today=row&&parseScore(row.roundScore??row.today??row.todayScore??row.rnd??row.round),rank=row&&Number(row.position||row.pos||row.rank||999);if(today!=null&&today>5)dead=true;if(rank<=l[1])inside++});let card=qs(`[data-slip='${i}']`),st=card.querySelector('.slipstat');card.classList.toggle('dead',dead);st.className=dead?'miss slipstat':'live slipstat';st.textContent=dead?'DEAD':inside+'/'+s[5].length+' in target'});qs('#alive').textContent=qsa('.slip:not(.dead)').length;qs('#feed').textContent=got.url.includes('espn')?'ESPN':'JSON';note.innerHTML=`Live feed loaded from <b>${got.url}</b>. Matched ${matched} player rows. Cut rule: today-only score over +5 = Missed Cut.`}catch(e){qs('#feed').textContent='Static';note.innerHTML='<b>Static tracker loaded.</b> Live feed did not load in-browser. Slips/players remain visible. Error: '+String(e.message).slice(0,220)}}render();loadBoard();setInterval(loadBoard,60000);</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Edge Slip Tracker</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #141b34;
+      --card2: #1c2544;
+      --text: #edf2ff;
+      --muted: #9daccc;
+      --good: #28d17c;
+      --bad: #ff5c7a;
+      --warn: #ffd166;
+      --line: rgba(255,255,255,.12);
+      --accent: #65a7ff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: linear-gradient(180deg, #071026, #0b1020 45%); color: var(--text); }
+    header { position: sticky; top: 0; z-index: 10; background: rgba(11,16,32,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 14px 10px; }
+    h1 { font-size: 20px; margin: 0 0 5px; }
+    .sub { color: var(--muted); font-size: 12px; }
+    main { padding: 14px; max-width: 1120px; margin: auto; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 380px 1fr; } }
+    .card { background: rgba(20,27,52,.96); border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+    .card h2 { margin: 0 0 12px; font-size: 16px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 5px; }
+    input, select, textarea { width: 100%; padding: 11px; border-radius: 12px; border: 1px solid var(--line); background: #0f1730; color: var(--text); font-size: 15px; outline: none; }
+    textarea { min-height: 72px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    button { border: 0; border-radius: 12px; padding: 11px 12px; font-weight: 700; color: #071026; background: var(--accent); cursor: pointer; }
+    button.secondary { background: #273457; color: var(--text); border: 1px solid var(--line); }
+    button.good { background: var(--good); }
+    button.bad { background: var(--bad); color: white; }
+    .btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 12px; }
+    @media (min-width: 720px) { .stats { grid-template-columns: repeat(4,1fr); } }
+    .stat { background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+    .stat .k { color: var(--muted); font-size: 11px; }
+    .stat .v { font-size: 20px; font-weight: 800; margin-top: 3px; }
+    .slip { border: 1px solid var(--line); border-radius: 16px; margin-bottom: 12px; overflow: hidden; background: rgba(28,37,68,.7); }
+    .slipHead { display: flex; justify-content: space-between; gap: 10px; padding: 12px; border-bottom: 1px solid var(--line); }
+    .slipTitle { font-weight: 800; }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #273457; color: var(--text); margin: 2px; }
+    .pill.good { background: rgba(40,209,124,.16); color: var(--good); border: 1px solid rgba(40,209,124,.35); }
+    .pill.bad { background: rgba(255,92,122,.16); color: var(--bad); border: 1px solid rgba(255,92,122,.35); }
+    .pill.warn { background: rgba(255,209,102,.16); color: var(--warn); border: 1px solid rgba(255,209,102,.35); }
+    .legs { padding: 8px; }
+    .leg { background: #101832; border: 1px solid var(--line); border-radius: 14px; padding: 10px; margin-bottom: 8px; }
+    .legTop { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .small { font-size: 12px; }
+    .calcLine { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; margin-top: 8px; }
+    @media (min-width: 760px) { .calcLine { grid-template-columns: repeat(4,1fr); } }
+    .mini { background: rgba(255,255,255,.05); border-radius: 10px; padding: 8px; }
+    .mini b { display: block; font-size: 13px; margin-top: 2px; }
+    .empty { color: var(--muted); text-align: center; padding: 28px 8px; border: 1px dashed var(--line); border-radius: 16px; }
+    .footerNote { color: var(--muted); font-size: 11px; margin-top: 10px; line-height: 1.35; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Live Edge Slip Tracker</h1>
+    <div class="sub">Free MVP • Manual odds/model input • Local browser save • GitHub Pages ready</div>
+  </header>
+
+  <main>
+    <div class="stats" id="stats"></div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Add Betting Slip</h2>
+        <label>Slip Name</label>
+        <input id="slipName" placeholder="DK MLB Parlay" />
+        <div class="row">
+          <div><label>Sportsbook</label><input id="sportsbook" placeholder="DraftKings" /></div>
+          <div><label>Stake $</label><input id="stake" type="number" step="0.01" placeholder="25" /></div>
+        </div>
+        <div class="row">
+          <div><label>Offered Payout $</label><input id="payout" type="number" step="0.01" placeholder="180" /></div>
+          <div><label>Status</label><select id="slipStatus"><option>pending</option><option>won</option><option>lost</option><option>cashed out</option></select></div>
+        </div>
+        <button style="width:100%;margin-top:12px" onclick="addSlip()">Create Slip</button>
+
+        <hr style="border-color:var(--line);margin:16px 0" />
+
+        <h2>Add Leg</h2>
+        <label>Choose Slip</label>
+        <select id="legSlip"></select>
+        <label>Event</label>
+        <input id="event" placeholder="Yankees vs Red Sox" />
+        <label>Market / Selection</label>
+        <input id="selection" placeholder="Judge over 1.5 hits" />
+        <div class="row3">
+          <div><label>Odds</label><input id="odds" type="number" placeholder="+145 or -120" /></div>
+          <div><label>Model %</label><input id="modelProb" type="number" step="0.1" placeholder="48" /></div>
+          <div><label>Status</label><select id="legStatus"><option>pending</option><option>won</option><option>lost</option><option>void</option></select></div>
+        </div>
+        <label>Notes</label>
+        <textarea id="notes" placeholder="Why you like it, injury angle, weather, matchup, etc."></textarea>
+        <button style="width:100%;margin-top:12px" onclick="addLeg()">Add Leg</button>
+
+        <div class="btnrow">
+          <button class="secondary" onclick="exportData()">Export Backup</button>
+          <button class="secondary" onclick="document.getElementById('importFile').click()">Import</button>
+          <button class="bad" onclick="resetAll()">Reset</button>
+        </div>
+        <input id="importFile" class="hidden" type="file" accept="application/json" onchange="importData(event)" />
+        <div class="footerNote">Model % is your estimated hit probability. Edge = Model Probability − Book Implied Probability. EV assumes $100 risk sizing for comparison.</div>
+      </section>
+
+      <section class="card">
+        <h2>Active Slips</h2>
+        <div id="slips"></div>
+      </section>
+    </div>
+  </main>
+
+<script>
+const LS_KEY = 'edgeSlipTracker.v1';
+let data = JSON.parse(localStorage.getItem(LS_KEY) || '{"slips":[]}');
+
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(data)); render(); }
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function n(v){ return Number(v || 0); }
+function pct(v){ return isFinite(v) ? `${v.toFixed(2)}%` : '—'; }
+function money(v){ return isFinite(v) ? `$${v.toFixed(2)}` : '—'; }
+
+function impliedFromAmerican(odds){
+  odds = n(odds);
+  if(!odds) return NaN;
+  return odds > 0 ? 100 / (odds + 100) * 100 : Math.abs(odds) / (Math.abs(odds) + 100) * 100;
+}
+function decimalFromAmerican(odds){
+  odds = n(odds);
+  if(!odds) return NaN;
+  return odds > 0 ? 1 + odds/100 : 1 + 100/Math.abs(odds);
+}
+function americanFromProb(probPct){
+  const p = probPct / 100;
+  if(!p || p <= 0 || p >= 1) return '—';
+  return p > 0.5 ? Math.round(-100*p/(1-p)) : `+${Math.round((100*(1-p))/p)}`;
+}
+function evPer100(odds, modelPct){
+  const dec = decimalFromAmerican(odds);
+  const p = modelPct / 100;
+  if(!isFinite(dec) || !isFinite(p)) return NaN;
+  return (p * ((dec - 1) * 100)) - ((1 - p) * 100);
+}
+function legMetrics(leg){
+  const implied = impliedFromAmerican(leg.odds);
+  const model = n(leg.modelProb);
+  const edge = model - implied;
+  const ev = evPer100(leg.odds, model);
+  return { implied, model, edge, ev, fairOdds: americanFromProb(model) };
+}
+function parlayModelProb(legs){
+  const active = legs.filter(l => l.status !== 'void');
+  if(!active.length) return NaN;
+  return active.reduce((acc,l)=>acc*(n(l.modelProb)/100),1)*100;
+}
+function parlayBookProb(legs){
+  const active = legs.filter(l => l.status !== 'void');
+  if(!active.length) return NaN;
+  return active.reduce((acc,l)=>acc*(impliedFromAmerican(l.odds)/100),1)*100;
+}
+
+function addSlip(){
+  data.slips.unshift({
+    id: uid(), name: document.getElementById('slipName').value || 'Untitled Slip',
+    sportsbook: document.getElementById('sportsbook').value || '', stake: n(document.getElementById('stake').value),
+    payout: n(document.getElementById('payout').value), status: document.getElementById('slipStatus').value, legs: [], createdAt: new Date().toISOString()
+  });
+  ['slipName','sportsbook','stake','payout'].forEach(id=>document.getElementById(id).value='');
+  save();
+}
+function addLeg(){
+  const slip = data.slips.find(s => s.id === document.getElementById('legSlip').value);
+  if(!slip) return alert('Create or choose a slip first.');
+  slip.legs.push({ id: uid(), event: document.getElementById('event').value, selection: document.getElementById('selection').value,
+    odds: n(document.getElementById('odds').value), modelProb: n(document.getElementById('modelProb').value), status: document.getElementById('legStatus').value,
+    notes: document.getElementById('notes').value });
+  ['event','selection','odds','modelProb','notes'].forEach(id=>document.getElementById(id).value='');
+  save();
+}
+function updateSlip(id, key, value){ const s=data.slips.find(x=>x.id===id); s[key]=value; save(); }
+function updateLeg(sid,lid,key,value){ const l=data.slips.find(s=>s.id===sid).legs.find(x=>x.id===lid); l[key]=key==='odds'||key==='modelProb'?n(value):value; save(); }
+function deleteSlip(id){ if(confirm('Delete this slip?')) { data.slips=data.slips.filter(s=>s.id!==id); save(); } }
+function deleteLeg(sid,lid){ const s=data.slips.find(x=>x.id===sid); s.legs=s.legs.filter(l=>l.id!==lid); save(); }
+
+function renderStats(){
+  const slips = data.slips, legs = slips.flatMap(s=>s.legs);
+  const pending = slips.filter(s=>s.status==='pending').length;
+  const avgEdge = legs.length ? legs.reduce((a,l)=>a+legMetrics(l).edge,0)/legs.length : 0;
+  const plusEV = legs.filter(l=>legMetrics(l).edge>0).length;
+  const risk = slips.reduce((a,s)=>a+n(s.stake),0);
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="k">Slips</div><div class="v">${slips.length}</div></div>
+    <div class="stat"><div class="k">Pending</div><div class="v">${pending}</div></div>
+    <div class="stat"><div class="k">Avg Edge</div><div class="v">${pct(avgEdge)}</div></div>
+    <div class="stat"><div class="k">Total Risk</div><div class="v">${money(risk)}</div></div>`;
+}
+function renderSelect(){
+  document.getElementById('legSlip').innerHTML = data.slips.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+}
+function renderSlips(){
+  const el = document.getElementById('slips');
+  if(!data.slips.length){ el.innerHTML='<div class="empty">No slips yet. Create your first slip on the left.</div>'; return; }
+  el.innerHTML = data.slips.map(s=>{
+    const mp = parlayModelProb(s.legs), bp = parlayBookProb(s.legs), edge = mp - bp;
+    const cls = edge > 3 ? 'good' : edge < 0 ? 'bad' : 'warn';
+    return `<div class="slip">
+      <div class="slipHead">
+        <div><div class="slipTitle">${escapeHtml(s.name)}</div><div class="muted">${escapeHtml(s.sportsbook || 'No book')} • Stake ${money(n(s.stake))} • Payout ${money(n(s.payout))}</div></div>
+        <div style="text-align:right"><span class="pill ${s.status==='won'?'good':s.status==='lost'?'bad':'warn'}">${s.status}</span><br><button class="secondary small" onclick="deleteSlip('${s.id}')">Delete</button></div>
+      </div>
+      <div style="padding:10px">
+        <span class="pill ${cls}">Parlay Edge: ${pct(edge)}</span>
+        <span class="pill">Model: ${pct(mp)}</span>
+        <span class="pill">Book: ${pct(bp)}</span>
+        <select onchange="updateSlip('${s.id}','status',this.value)" style="margin-top:8px"><option ${s.status==='pending'?'selected':''}>pending</option><option ${s.status==='won'?'selected':''}>won</option><option ${s.status==='lost'?'selected':''}>lost</option><option ${s.status==='cashed out'?'selected':''}>cashed out</option></select>
+      </div>
+      <div class="legs">${s.legs.length ? s.legs.map(l=>renderLeg(s.id,l)).join('') : '<div class="muted">No legs added yet.</div>'}</div>
+    </div>`;
+  }).join('');
+}
+function renderLeg(sid,l){
+  const m = legMetrics(l), cls = m.edge > 3 ? 'good' : m.edge < 0 ? 'bad' : 'warn';
+  return `<div class="leg">
+    <div class="legTop"><div><b>${escapeHtml(l.selection || 'Unnamed Leg')}</b><div class="muted">${escapeHtml(l.event || '')}</div></div><button class="secondary small" onclick="deleteLeg('${sid}','${l.id}')">Remove</button></div>
+    <div class="calcLine">
+      <div class="mini"><span class="muted">Odds</span><input value="${l.odds}" onchange="updateLeg('${sid}','${l.id}','odds',this.value)"></div>
+      <div class="mini"><span class="muted">Model %</span><input value="${l.modelProb}" onchange="updateLeg('${sid}','${l.id}','modelProb',this.value)"></div>
+      <div class="mini"><span class="muted">Implied</span><b>${pct(m.implied)}</b></div>
+      <div class="mini"><span class="muted">Edge</span><b class="${cls}">${pct(m.edge)}</b></div>
+      <div class="mini"><span class="muted">EV / $100</span><b>${money(m.ev)}</b></div>
+      <div class="mini"><span class="muted">Fair Odds</span><b>${m.fairOdds}</b></div>
+      <div class="mini"><span class="muted">Status</span><select onchange="updateLeg('${sid}','${l.id}','status',this.value)"><option ${l.status==='pending'?'selected':''}>pending</option><option ${l.status==='won'?'selected':''}>won</option><option ${l.status==='lost'?'selected':''}>lost</option><option ${l.status==='void'?'selected':''}>void</option></select></div>
+    </div>
+    ${l.notes ? `<div class="footerNote">${escapeHtml(l.notes)}</div>` : ''}
+  </div>`;
+}
+function render(){ renderStats(); renderSelect(); renderSlips(); }
+function exportData(){
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'edge-slip-tracker-backup.json'; a.click();
+}
+function importData(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { try { data = JSON.parse(reader.result); save(); } catch { alert('Invalid JSON backup.'); } };
+  reader.readAsText(file);
+}
+function resetAll(){ if(confirm('Clear all local data?')) { data={slips:[]}; save(); } }
+function escapeHtml(str){ return String(str||'').replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+render();
+</script>
+</body>
+</html>
