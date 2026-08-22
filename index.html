@@ -14,10 +14,10 @@
 <header><div class="wrap brand"><div><h1>⛳ Full Monty Tracker</h1><div class="sub">BMW Championship • all slips on one page</div></div><div class="live"><span class="dot"></span><span id="feedStatus">Connecting…</span></div></div></header>
 <main class="wrap">
 <section class="summary">
-<div class="stat"><span>Slips</span><b id="sumSlips">2</b></div>
-<div class="stat"><span>Total Risk</span><b id="sumRisk">$3.00</b></div>
-<div class="stat"><span>Max Return</span><b id="sumReturn">$88.30</b></div>
-<div class="stat"><span>Players</span><b id="sumPlayers">8</b></div>
+<div class="stat"><span>Slips</span><b id="sumSlips">3</b></div>
+<div class="stat"><span>Total Risk</span><b id="sumRisk">$4.00</b></div>
+<div class="stat"><span>Max Return</span><b id="sumReturn">$113.30</b></div>
+<div class="stat"><span>Players</span><b id="sumPlayers">12</b></div>
 </section>
 <section class="card"><div class="sectionTitle"><h2>Active Slips</h2><span class="sub" id="updated"></span></div><div id="slips"></div></section>
 <section class="card"><div class="sectionTitle"><h2>Exposure / Watchlist</h2><span class="sub">BMW Championship</span></div><div class="exposure" id="exposure"></div></section>
@@ -35,7 +35,12 @@ const SLIPS=[
 {name:'Cameron Young',market:'Top 10 Incl. Ties',cut:10},
 {name:'Matt Fitzpatrick',market:'Top 10 Incl. Ties',cut:10},
 {name:'J.J. Spaun',market:'Top 20 Incl. Ties',cut:20},
-{name:'Sam Burns',market:'Top 10 Incl. Ties',cut:10}]}
+{name:'Sam Burns',market:'Top 10 Incl. Ties',cut:10}]},
+{id:'BMW-3',name:'4 Leg SGP',book:'Fanatics',event:'BMW Championship',odds:2400,wager:1,payout:25,cash:.03,betId:'26334049000019810',legs:[
+{name:'Sungjae Im',market:'Top 20 Incl. Ties',cut:20},
+{name:'Tommy Fleetwood',market:'Top 20 Incl. Ties',cut:20},
+{name:'Viktor Hovland',market:'Top 20 Incl. Ties',cut:20},
+{name:'Justin Rose',market:'Top 20 Incl. Ties',cut:20}]}
 ];
 let BOARD={};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
@@ -51,4 +56,5 @@ function parseESPN(data){const out={};for(const ev of data?.events||[]){for(cons
 async function loadBoard(){try{feedStatus.textContent='Updating…';const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();BOARD=parseESPN(d);const found=flatPlayers().filter(p=>BOARD[norm(p.name)]).length;feedStatus.textContent=found?`LIVE • ${found}/${flatPlayers().length}`:'Feed connected';updated.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});render()}catch(e){feedStatus.textContent='Slips live • feed unavailable';updated.textContent='Live data blocked';render()}}
 render();loadBoard();setInterval(loadBoard,60000);
 </script>
-</body></html>
+</body>
+</html>
